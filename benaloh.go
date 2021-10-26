@@ -99,3 +99,57 @@ func GenerateKey(random io.Reader, bitsize int) (*PrivateKey, error) {
 		}
 	}
 }
+
+// Encrypt encrypts a plain text represented as a byte array. It returns
+// an error if plain text value is larger than R value of Public key.
+func (pub *PublicKey) Encrypt(plainText []byte) ([]byte, error) {
+	u, err := rand.Int(rand.Reader, new(big.Int).Sub(pub.N, one))
+	//u, err := rand.Prime(rand.Reader, pub.N.BitLen()) // prime no. can also be used
+	if err != nil {
+		return nil, err
+	}
+
+	m := new(big.Int).SetBytes(plainText)
+	if m.Cmp(pub.R) == 1 { //  m < R
+		return nil, ErrLargeMessage
+	}
+
+	// c = y^m * u^r mod n
+	c := new(big.Int).Mod(
+		new(big.Int).Mul(
+			new(big.Int).Exp(pub.Y, m, pub.N),
+			new(big.Int).Exp(u, pub.R, pub.N),
+		),
+		pub.N,
+	)
+
+	return c.Bytes(), nil
+}
+
+// Decrypt decrypts the passed cipher text. It returns
+// an error if cipher text value is larger than modulus N of Public key.
+// Moreover, this works by taking discrete log of a base x to
+// recover original message m. It can only work, if R is small.
+// Otherwise, message can be recovered using Baby-step giant-step
+// algorithm in case of large value of R.
+func (priv *PrivateKey) Decrypt(cipherText []byte) ([]byte, error) {
+	c := new(big.Int).SetBytes(cipherText)
+
+	if c.Cmp(priv.N) == 1 { // c < n
+		return nil, ErrLargeCipher
+	}
+
+	// c^phi/r mod n
+	a := new(big.Int).Exp(c, priv.PhiDivR, priv.N)
+
+	// taking discret log of a base x. if R is small,
+	// original message can be recovered by an exhaustive search,
+	// i.e. checking if x^i mod n == a.
+	for i := new(big.Int).Set(one); i.Cmp(priv.R) < 0; i.Add(i, one) {
+		xa := new(big.Int).Exp(priv.X, i, priv.N)
+		if xa.Cmp(a) == 0 {
+			return i.Bytes(), nil
+		}
+	}
+	return nil, nil
+}
