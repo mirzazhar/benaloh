@@ -18,7 +18,7 @@ go get -u github.com/Mirzazhar/benaloh
 ```
 ## Warning
 This package is intendedly designed for education purposes. Of course, it may contain bugs and needs several improvements. Therefore, this package should not be used for production purposes.
-> :warning: **Keys generation implementation is not efficient and it takes time to generate keys using large primes. The worst thing, it can generate keys up to the 32-bit size of prime numbers**
+> :warning: **Keys generation implementation is not efficient and it takes time to generate keys using large primes. The worst thing, it can generate keys up to the 32-bit size of prime numbers.**
 ## Limitations
 In this implementation decryption algorithm works by taking the discrete log of a base x to recover original message m. It can only work if the value of R in the key is small. Otherwise, message m can be recovered using [Baby-step giant-step algorithm](https://en.wikipedia.org/wiki/Baby-step_giant-step) in case of a large value of R.
 ## Usage & Examples
